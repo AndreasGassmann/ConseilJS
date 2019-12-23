@@ -1,5 +1,5 @@
-import {ConseilServerInfo, ConseilQuery} from '../types/conseil/QueryTypes';
-import {ConseilRequestError} from '../types/conseil/ConseilErrorTypes';
+import { ConseilServerInfo, ConseilQuery } from '../types/conseil/QueryTypes';
+import { ConseilRequestError } from '../types/conseil/ConseilErrorTypes';
 import FetchSelector from '../utils/FetchSelector';
 import LogSelector from '../utils/LoggerSelector';
 
@@ -21,27 +21,27 @@ export namespace ConseilDataClient {
      */
     export async function executeEntityQuery(serverInfo: ConseilServerInfo, platform: string, network: string, entity: string, query: ConseilQuery): Promise<any[]> {
         const url = `${serverInfo.url}/v2/data/${platform}/${network}/${entity}`
-        log.debug(`ConseilDataClient.executeEntityQuery request: ${url}, ${JSON.stringify(query)}`);
+        console.debug(`ConseilDataClient.executeEntityQuery request: ${url}, ${JSON.stringify(query)}`);
 
         return fetch(url, {
             method: 'post',
             headers: { 'apiKey': serverInfo.apiKey, 'Content-Type': 'application/json' },
             body: JSON.stringify(query)
         })
-        .then(r => {
-            if (!r.ok) {
-                log.error(`ConseilDataClient.executeEntityQuery request: ${url}, ${JSON.stringify(query)}, failed with ${r.statusText}(${r.status})`);
-                throw new ConseilRequestError(r.status, r.statusText, url, query);
-            }
-            return r;
-        })
-        .then(r => {
-            const isJSONResponse: boolean = r.headers.get('content-type').toLowerCase().includes('application/json');
-            const response = isJSONResponse ? r.json() : r.text();
+            .then(r => {
+                if (!r.ok) {
+                    console.error(`ConseilDataClient.executeEntityQuery request: ${url}, ${JSON.stringify(query)}, failed with ${r.statusText}(${r.status})`);
+                    throw new ConseilRequestError(r.status, r.statusText, url, query);
+                }
+                return r;
+            })
+            .then(r => {
+                const isJSONResponse: boolean = r.headers.get('content-type').toLowerCase().includes('application/json');
+                const response = isJSONResponse ? r.json() : r.text();
 
-            log.debug(`ConseilDataClient.executeEntityQuery response: ${isJSONResponse ? JSON.stringify(response) : response}`);
+                console.debug(`ConseilDataClient.executeEntityQuery response: ${isJSONResponse ? JSON.stringify(response) : response}`);
 
-            return response;
-        });
+                return response;
+            });
     }
 }

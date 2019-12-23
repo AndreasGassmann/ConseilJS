@@ -12,8 +12,7 @@ import { TezosLanguageUtil } from './TezosLanguageUtil';
 import { TezosOperationQueue } from './TezosOperationQueue';
 import { CryptoUtils } from '../../utils/CryptoUtils';
 
-import FetchSelector from '../../utils/FetchSelector'
-const fetch = FetchSelector.getFetch();
+const fetch = require('node-fetch');
 
 import DeviceSelector from '../../utils/DeviceSelector';
 let LedgerUtils = DeviceSelector.getLedgerUtils();
@@ -39,7 +38,7 @@ export namespace TezosNodeWriter {
         const url = `${server}/${command}`;
         const payloadStr = JSON.stringify(payload);
 
-        log.debug(`TezosNodeWriter.performPostRequest sending ${payloadStr}\n->\n${url}`);
+        console.debug(`TezosNodeWriter.performPostRequest sending ${payloadStr}\n->\n${url}`);
 
         return fetch(url, { method: 'post', body: payloadStr, headers: { 'content-type': 'application/json' } });
     }
@@ -61,7 +60,7 @@ export namespace TezosNodeWriter {
                 try {
                     opSignature = await LedgerUtils.signTezosOperation(derivationPath, watermarkedForgedOperationBytesHex);
                 } catch (err) {
-                    log.error(`TezosNodeWriter.signOperationGroup could not communicate with device: ${JSON.stringify(err)}`);
+                    console.error(`TezosNodeWriter.signOperationGroup could not communicate with device: ${JSON.stringify(err)}`);
                     throw new Error("Failed to connect to the Ledger device");
                 }
                 break;
@@ -88,8 +87,8 @@ export namespace TezosNodeWriter {
      */
     // TODO: move to an appropriate place
     export function forgeOperations(branch: string, operations: TezosP2PMessageTypes.Operation[]): string {
-        log.debug('TezosNodeWriter.forgeOperations:');
-        log.debug(JSON.stringify(operations));
+        console.debug('TezosNodeWriter.forgeOperations:');
+        console.debug(JSON.stringify(operations));
         let encoded = TezosMessageUtils.writeBranch(branch);
         operations.forEach(m => encoded += TezosMessageCodec.encodeOperation(m));
 
@@ -107,9 +106,9 @@ export namespace TezosNodeWriter {
      * @returns {Promise<string>} Forged operation bytes (as a hex string)
      */
     export async function forgeOperationsRemotely(server: string, blockHead: TezosRPCTypes.TezosBlock, operations: TezosP2PMessageTypes.Operation[], chainid: string = 'main'): Promise<string> {
-        log.debug('TezosNodeWriter.forgeOperations:');
-        log.debug(JSON.stringify(operations));
-        log.warn('forgeOperationsRemotely() is not intrinsically trustless');
+        console.debug('TezosNodeWriter.forgeOperations:');
+        console.debug(JSON.stringify(operations));
+        console.warn('forgeOperationsRemotely() is not intrinsically trustless');
         const response = await performPostRequest(server, `chains/${chainid}/blocks/head/helpers/forge/operations`, { branch: blockHead.hash, contents: operations });
         const forgedOperation = await response.text();
         const ops = forgedOperation.replace(/\n/g, '').replace(/['"]+/g, '');
@@ -170,12 +169,12 @@ export namespace TezosNodeWriter {
         // parse errors
 
         try {
-            log.debug(`TezosNodeWriter.applyOperation received ${text}`);
+            console.debug(`TezosNodeWriter.applyOperation received ${text}`);
 
             const json = JSON.parse(text);
             return json as TezosTypes.AlphaOperationsWithMetadata[];
         } catch (err) {
-            log.error(`TezosNodeWriter.applyOperation failed to parse response`);
+            console.error(`TezosNodeWriter.applyOperation failed to parse response`);
             throw new Error(`Could not parse JSON response from chains/${chainid}/blocks/head/helpers/preapply/operation: '${text}' for ${payload}`);
         }
     }
@@ -190,13 +189,13 @@ export namespace TezosNodeWriter {
         const firstAppliedOp = appliedOp[0]; // All our op groups are singletons so we deliberately check the zeroth result.
 
         if (firstAppliedOp.kind != null && !validAppliedKinds.has(firstAppliedOp.kind)) {
-            log.error(`TezosNodeWriter.checkAppliedOperationResults failed with ${firstAppliedOp.id}`);
+            console.error(`TezosNodeWriter.checkAppliedOperationResults failed with ${firstAppliedOp.id}`);
             throw new Error(`Could not apply operation because ${firstAppliedOp.id}`);
         }
 
         for (const op of firstAppliedOp.contents) {
             if (!validAppliedKinds.has(op.kind)) {
-                log.error(`TezosNodeWriter.checkAppliedOperationResults failed with ${op.metadata}`);
+                console.error(`TezosNodeWriter.checkAppliedOperationResults failed with ${op.metadata}`);
                 throw new Error(`Could not apply operation because: ${op.metadata}`);
             }
         }
@@ -256,7 +255,7 @@ export namespace TezosNodeWriter {
         operationQueues[k].addOperations(...operations);
     }
 
-    export function getQueueStatus(server: string, keyStore: KeyStore, derivationPath: string = ''){
+    export function getQueueStatus(server: string, keyStore: KeyStore, derivationPath: string = '') {
         const k = blakejs.blake2s(`${server}${keyStore.publicKeyHash}${derivationPath}`, null, 16);
 
         if (operationQueues[k]) {
@@ -405,15 +404,15 @@ export namespace TezosNodeWriter {
 
         if (codeFormat === TezosTypes.TezosParameterFormat.Michelson) {
             parsedCode = JSON.parse(TezosLanguageUtil.translateMichelsonToMicheline(code));
-            log.debug(`TezosNodeWriter.sendOriginationOperation code translation:\n${code}\n->\n${JSON.stringify(parsedCode)}`);
+            console.debug(`TezosNodeWriter.sendOriginationOperation code translation:\n${code}\n->\n${JSON.stringify(parsedCode)}`);
 
             parsedStorage = JSON.parse(TezosLanguageUtil.translateMichelsonToMicheline(storage));
-            log.debug(`TezosNodeWriter.sendOriginationOperation storage translation:\n${storage}\n->\n${JSON.stringify(parsedStorage)}`);
+            console.debug(`TezosNodeWriter.sendOriginationOperation storage translation:\n${storage}\n->\n${JSON.stringify(parsedStorage)}`);
         } else if (codeFormat === TezosTypes.TezosParameterFormat.Micheline) {
             parsedCode = JSON.parse(code);
             parsedStorage = JSON.parse(storage); // TODO: handle empty storage
         }
-   
+
         const counter = await TezosNodeReader.getCounterForAccount(server, keyStore.publicKeyHash) + 1;
 
         const origination: TezosP2PMessageTypes.Origination = {
@@ -505,7 +504,7 @@ export namespace TezosNodeWriter {
                 transaction.parameters = { entrypoint: entrypoint || 'default', value: JSON.parse(michelineLambda) };
             }
         } else if (entrypoint !== undefined) {
-            transaction.parameters = { entrypoint: entrypoint, value: [ ] };
+            transaction.parameters = { entrypoint: entrypoint, value: [] };
         }
 
         return transaction;
@@ -597,7 +596,7 @@ export namespace TezosNodeWriter {
         entrypoint: string | undefined,
         parameters: string | undefined,
         parameterFormat: TezosTypes.TezosParameterFormat = TezosTypes.TezosParameterFormat.Micheline
-    ): Promise<{gas: number, storageCost: number}> {
+    ): Promise<{ gas: number, storageCost: number }> {
         const counter = await TezosNodeReader.getCounterForAccount(server, keyStore.publicKeyHash) + 1;
         const transaction = constructContractInvocationOperation(keyStore.publicKeyHash, counter, to, amount, fee, storageLimit, gasLimit, entrypoint, parameters, parameterFormat);
         const blockHead = await TezosNodeReader.getBlockHead(server);
@@ -654,7 +653,7 @@ export namespace TezosNodeWriter {
             return `Failed with ${[errorKind, errorType, errorMessage].filter(e => e !== '').join(', ')}`;
         } else {
             let errors = '';
-            for(let c of responseJSON['contents']) {
+            for (let c of responseJSON['contents']) {
                 const operationStatus = c['metadata']['operation_result']['status'];
 
                 if (operationStatus !== 'applied') {

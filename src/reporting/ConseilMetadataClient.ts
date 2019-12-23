@@ -1,6 +1,6 @@
-import {ConseilServerInfo} from '../types/conseil/QueryTypes'
-import {ConseilRequestError} from '../types/conseil/ConseilErrorTypes';
-import {PlatformDefinition, NetworkDefinition, EntityDefinition, AttributeDefinition} from '../types/conseil/MetadataTypes';
+import { ConseilServerInfo } from '../types/conseil/QueryTypes'
+import { ConseilRequestError } from '../types/conseil/ConseilErrorTypes';
+import { PlatformDefinition, NetworkDefinition, EntityDefinition, AttributeDefinition } from '../types/conseil/MetadataTypes';
 import FetchSelector from '../utils/FetchSelector';
 import LogSelector from '../utils/LoggerSelector';
 
@@ -16,16 +16,16 @@ export namespace ConseilMetadataClient {
             method: 'GET',
             headers: { 'apiKey': serverInfo.apiKey }
         })
-        .then(r => {
-            if (!r.ok) { throw new ConseilRequestError(r.status, r.statusText, `${serverInfo.url}/v2/metadata/${route}`, null); }
-            return r;
-        })
-        .then(
-            r => r.json()
-            .catch(error => {
-                log.error(`ConseilMetadataClient.executeMetadataQuery parsing failed for ${serverInfo.url}/v2/metadata/${route} with ${error}`);
+            .then(r => {
+                if (!r.ok) { throw new ConseilRequestError(r.status, r.statusText, `${serverInfo.url}/v2/metadata/${route}`, null); }
+                return r;
             })
-        );
+            .then(
+                r => r.json()
+                    .catch(error => {
+                        console.error(`ConseilMetadataClient.executeMetadataQuery parsing failed for ${serverInfo.url}/v2/metadata/${route} with ${error}`);
+                    })
+            );
     }
 
     /**

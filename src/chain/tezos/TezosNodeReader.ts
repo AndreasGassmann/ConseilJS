@@ -23,14 +23,14 @@ export namespace TezosNodeReader {
         return fetch(url, { method: 'get' })
             .then(response => {
                 if (!response.ok) {
-                    log.error(`TezosNodeReader.performGetRequest error: ${response.status} for ${command} on ${server}`);
+                    console.error(`TezosNodeReader.performGetRequest error: ${response.status} for ${command} on ${server}`);
                     throw new TezosRequestError(response.status, response.statusText, url, null);
                 }
                 return response;
             })
             .then(response => {
                 const json: any = response.json();
-                log.debug(`TezosNodeReader.performGetRequest response: ${json} for ${command} on ${server}`);
+                console.debug(`TezosNodeReader.performGetRequest response: ${json} for ${command} on ${server}`);
                 return json;
             });
     }
@@ -44,7 +44,7 @@ export namespace TezosNodeReader {
      * @returns {Promise<TezosRPCTypes.TezosBlock>} Block
      */
     export function getBlock(server: string, hash: string = 'head', chainid: string = 'main'): Promise<TezosRPCTypes.TezosBlock> {
-        return performGetRequest(server, `chains/${chainid}/blocks/${hash}`).then(json => { return <TezosRPCTypes.TezosBlock> json });
+        return performGetRequest(server, `chains/${chainid}/blocks/${hash}`).then(json => { return <TezosRPCTypes.TezosBlock>json });
     }
 
     /**
@@ -68,7 +68,7 @@ export namespace TezosNodeReader {
      */
     export function getAccountForBlock(server: string, blockHash: string, accountHash: string, chainid: string = 'main'): Promise<TezosRPCTypes.Contract> {
         return performGetRequest(server, `chains/${chainid}/blocks/${blockHash}/context/contracts/${accountHash}`)
-            .then(json => <TezosRPCTypes.Contract> json);
+            .then(json => <TezosRPCTypes.Contract>json);
     }
 
     /**
@@ -95,7 +95,7 @@ export namespace TezosNodeReader {
      */
     export async function getSpendableBalanceForAccount(server: string, accountHash: string, chainid: string = 'main'): Promise<number> {
         const account = await performGetRequest(server, `chains/${chainid}/blocks/head/context/contracts/${accountHash}`)
-            .then(json => <TezosRPCTypes.Contract> json);
+            .then(json => <TezosRPCTypes.Contract>json);
         return parseInt(account.balance.toString(), 10);
     }
 
@@ -154,6 +154,6 @@ export namespace TezosNodeReader {
      * @param {string} chainid Chain id, expected to be 'main' or 'test', defaults to main.
      */
     export function getValueForBigMapKey(server: string, index: number, key: string, block: string = 'head', chainid: string = 'main'): Promise<any> {
-        return performGetRequest(server, `chains/${chainid}/blocks/${block}/context/big_maps/${index}/${key}`,);
+        return performGetRequest(server, `chains/${chainid}/blocks/${block}/context/big_maps/${index}/${key}`);
     }
 }

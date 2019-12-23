@@ -77,8 +77,8 @@ export class TezosOperationQueue {
 
         try {
             await TezosNodeWriter.sendOperation(this.server, ops, this.keyStore, this.derivationPath);
-        } catch(error) {
-            log.error(`Error sending queued operations: ${error}`);
+        } catch (error) {
+            console.error(`Error sending queued operations: ${error}`);
         }
     }
 }
